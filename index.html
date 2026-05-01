@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000">
+  <title>BROADCAST — Wear the Static</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --acid: #c8ff00;
+      --blood: #ff2200;
+      --ice: #00e5ff;
+      --void: #000000;
+      --bone: #e0ddd5;
+      --ash: #888;
+      --deep: #0a0a0a;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; overflow-x:hidden; }
+    body {
+      background: var(--void); color: var(--bone);
+      font-family: 'Syne', sans-serif;
+      overflow-x: hidden; -webkit-font-smoothing:antialiased;
+      cursor: crosshair;
+    }
+
+    /* ---- PLAY BUTTON ---- */
+    .play-btn {
+      position:fixed; top:1rem; right:1rem; z-index:10000;
+      width:54px; height:54px; border:2px solid var(--acid);
+      border-radius:50%; background:rgba(0,0,0,0.92);
+      backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition: transform 0.15s cubic-bezier(.16,1,.3,1), border-color 0.2s, box-shadow 0.3s;
+      outline:none; -webkit-tap-highlight-color:transparent;
+    }
+    .play-btn:hover, .play-btn:focus-visible {
+      transform:scale(1.18); border-color:var(--blood);
+      box-shadow: 0 0 30px rgba(255,34,0,0.45), 0 0 80px rgba(255,34,0,0.12);
+    }
+    .play-btn:active { transform:scale(0.88); transition-duration:0.06s; }
+    .play-icon {
+      width:0; height:0; border-style:solid;
+      border-width:9px 0 9px 18px;
+      border-color:transparent transparent transparent var(--acid);
+      margin-left:4px; transition:all 0.15s;
+    }
+    .play-btn.on .play-icon {
+      border-width:0 0 16px 16px;
+      border-color:transparent transparent var(--blood) transparent;
+      margin-left:0;
+    }
+    .play-btn.on {
+      border-color:var(--blood);
+      animation: btnGlow 0.9s ease-in-out infinite;
+    }
+    @keyframes btnGlow {
+      0%,100% { box-shadow:0 0 10px rgba(255,34,0,0.3); }
+      50%     { box-shadow:0 0 45px rgba(255,34,0,0.55), 0 0 100px rgba(255,34,0,0.15); }
+    }
+
+    /* ---- HERO ---- */
+    .hero {
+      position:relative; height:100dvh;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      text-align:center; padding:2rem 1.5rem; overflow:hidden; z-index:3;
+    }
+    .hero-title {
+      font-family:'Syne',sans-serif; font-size:clamp(3.5rem,15vw,11rem);
+      font-weight:800; line-height:0.85; letter-spacing:-0.04em;
+      text-transform:uppercase; position:relative; z-index:3; color:var(--bone);
+      animation: slam 0.8s cubic-bezier(.16,1,.3,1) both;
+    }
+    @keyframes slam {
+      0%   { transform:scale(3) translateY(-30%); opacity:0; filter:blur(20px); }
+      60%  { transform:scale(1) translateY(0); opacity:1; filter:blur(0); }
+      75%  { transform:scale(1.03) translateY(-2px); }
+      100% { transform:scale(1) translateY(0); }
+    }
+    .hero-title::before, .hero-title::after {
+      content:attr(data-text); position:absolute; top:0; left:0;
+      width:100%; height:100%; pointer-events:none;
+    }
+    .hero-title::before {
+      color:var(--blood); z-index:-1;
+      animation: gA 4s infinite;
+      clip-path:polygon(0 0,100% 0,100% 35%,0 35%);
+    }
+    .hero-title::after {
+      color:var(--ice); z-index:-1;
+      animation: gB 3.5s infinite;
+      clip-path:polygon(0 65%,100% 65%,100% 100%,0 100%);
+    }
+    @keyframes gA {
+      0%,87%,100%{transform:translate(0)}
+      88%{transform:translate(6px,-3px) skewX(2deg)}
+      90%{transform:translate(-8px,2px) skewX(-1deg)}
+      92%{transform:translate(4px,1px)}
+      94%{transform:translate(-2px,-4px) skewX(3deg)}
+    }
+    @keyframes gB {
+      0%,85%,100%{transform:translate(0)}
+      86%{transform:translate(-7px,3px) skewX(-2deg)}
+      89%{transform:translate(5px,-2px) skewX(1deg)}
+      91%{transform:translate(-3px,4px)}
+      93%{transform:translate(6px,-1px) skewX(-3deg)}
+    }
+    .hero-sub {
+      font-family:'Space Mono',monospace; font-size:clamp(0.7rem,2.2vw,1rem);
+      color:var(--ash); letter-spacing:0.12em; text-transform:uppercase;
+      z-index:3; margin-top:2rem; opacity:0;
+      animation: su 0.6s 0.5s cubic-bezier(.16,1,.3,1) forwards;
+    }
+    @keyframes su { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+    .hero-line {
+      width:1px; height:80px;
+      background:linear-gradient(to bottom,var(--acid),transparent);
+      margin-top:3rem; z-index:3; opacity:0;
+      animation: su 0.6s 0.8s cubic-bezier(.16,1,.3,1) forwards;
+    }
+
+    /* ---- MARQUEE ---- */
+    .marquee { overflow:hidden; white-space:nowrap; padding:1.2rem 0; border-top:1px solid rgba(200,255,0,0.06); border-bottom:1px solid rgba(200,255,0,0.06); z-index:3; position:relative; }
+    .marquee-inner { display:inline-flex; animation:ms 25s linear infinite; }
+    .marquee-inner:hover { animation-play-state:paused; }
+    .marquee-item {
+      font-family:'Syne',sans-serif; font-size:clamp(1.2rem,4vw,2.5rem);
+      font-weight:800; text-transform:uppercase; letter-spacing:0.04em;
+      padding:0 1.5rem; color:transparent;
+      -webkit-text-stroke:1px rgba(200,255,0,0.15);
+      transition:all 0.2s cubic-bezier(.16,1,.3,1);
+    }
+    .marquee-item:hover {
+      color:var(--acid); -webkit-text-stroke:1px var(--acid);
+      text-shadow:0 0 40px rgba(200,255,0,0.4); transform:scaleY(1.5);
+    }
+    @keyframes ms { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+    /* ---- SECTIONS ---- */
+    .sect { position:relative; z-index:3; padding:5rem 1.5rem; }
+    @media(min-width:768px){ .sect{ padding:8rem 3rem; } }
+    .rv {
+      opacity:0; transform:translateY(50px) scale(0.97);
+      transition: opacity 0.7s cubic-bezier(.16,1,.3,1), transform 0.7s cubic-bezier(.16,1,.3,1);
+    }
+    .rv.vis { opacity:1; transform:translateY(0) scale(1); }
+    .label {
+      font-family:'Space Mono',monospace; font-size:0.6rem;
+      letter-spacing:0.3em; text-transform:uppercase;
+      color:var(--acid); margin-bottom:1rem; display:block;
+    }
+    .heading {
+      font-family:'Syne',sans-serif; font-size:clamp(2rem,7vw,4.5rem);
+      font-weight:800; line-height:1; text-transform:uppercase;
+      letter-spacing:-0.03em; margin-bottom:1.5rem;
+    }
+    .heading .hl { color:var(--acid); }
+    .desc {
+      font-family:'Space Mono',monospace; font-size:clamp(0.7rem,1.6vw,0.85rem);
+      line-height:1.9; color:var(--ash); max-width:520px;
+    }
+
+    /* ---- FREQ CANVAS ---- */
+    #freqCanvas { display:block; margin:2.5rem auto; max-width:100%; border-radius:8px; }
+
+    /* ---- SPLASH CARDS ---- */
+    .splash-card {
+      position:relative; background:rgba(12,12,12,0.95);
+      border:1px solid rgba(200,255,0,0.06); border-radius:14px;
+      padding:2rem 1.5rem; overflow:hidden; cursor:pointer;
+      transition: transform 0.2s cubic-bezier(.16,1,.3,1), border-color 0.3s, box-shadow 0.3s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .splash-card::before {
+      content:''; position:absolute;
+      top:var(--sy,50%); left:var(--sx,50%);
+      width:0; height:0; border-radius:50%;
+      background:radial-gradient(circle, rgba(200,255,0,0.12) 0%, rgba(200,255,0,0.03) 50%, transparent 70%);
+      transform:translate(-50%,-50%);
+      transition: width 0.5s cubic-bezier(.16,1,.3,1), height 0.5s cubic-bezier(.16,1,.3,1);
+      pointer-events:none; z-index:0;
+    }
+    .splash-card:hover::before { width:800px; height:800px; }
+    .splash-card:hover {
+      transform:translateY(-6px) scale(1.03);
+      border-color:rgba(200,255,0,0.3);
+      box-shadow: 0 25px 80px rgba(0,0,0,0.6), 0 0 50px rgba(200,255,0,0.07);
+    }
+    .splash-card:active { transform:translateY(-2px) scale(0.97); transition-duration:0.06s; }
+    .splash-card > * { position:relative; z-index:1; }
+    .card-num { font-family:'Space Mono',monospace; font-size:0.6rem; letter-spacing:0.25em; color:var(--acid); opacity:0.6; margin-bottom:0.8rem; }
+    .card-ttl { font-family:'Syne',sans-serif; font-size:clamp(1.1rem,3vw,1.5rem); font-weight:700; line-height:1.2; margin-bottom:0.6rem; color:var(--bone); transition:color 0.2s; }
+    .splash-card:hover .card-ttl { color:var(--acid); }
+    .card-bdy { font-family:'Space Mono',monospace; font-size:clamp(0.65rem,1.5vw,0.78rem); line-height:1.8; color:rgba(136,136,136,0.8); }
+
+    /* ---- BREAKER ---- */
+    .breaker {
+      font-family:'Syne',sans-serif; font-size:clamp(2.5rem,10vw,8rem);
+      font-weight:800; text-transform:uppercase; line-height:0.9;
+      letter-spacing:-0.04em; text-align:center;
+      position:relative; z-index:3; padding:4rem 1rem;
+    }
+    .breaker .word {
+      display:inline-block; transition:all 0.2s cubic-bezier(.16,1,.3,1); cursor:default;
+    }
+    .breaker .word:hover {
+      color:var(--blood); transform:scaleY(2.5) scaleX(0.85);
+      text-shadow:0 0 40px rgba(255,34,0,0.5);
+    }
+
+    /* ---- TEETH ---- */
+    .teeth-grid {
+      display:grid; grid-template-columns:repeat(7,1fr);
+      gap:6px; max-width:400px; margin:2.5rem auto;
+    }
+    @media(min-width:640px){ .teeth-grid{ grid-template-columns:repeat(14,1fr); max-width:600px; } }
+    .tooth {
+      aspect-ratio:0.8; background:#141414; border:1px solid #222;
+      border-radius:4px 4px 6px 6px; cursor:pointer; position:relative;
+      transition:all 0.15s cubic-bezier(.16,1,.3,1);
+      -webkit-tap-highlight-color:transparent; overflow:hidden;
+    }
+    .tooth::after {
+      content:''; position:absolute; top:20%; left:20%; width:60%; height:25%;
+      background:#222; border-radius:2px;
+      transition:all 0.15s cubic-bezier(.16,1,.3,1);
+    }
+    .tooth:hover {
+      transform:scale(1.15) translateY(-2px); border-color:var(--ice);
+      box-shadow:0 0 15px rgba(0,229,255,0.2); z-index:2;
+    }
+    .tooth:active { transform:scale(0.88); transition-duration:0.06s; }
+    .tooth[data-on="true"] {
+      background:var(--void); border-color:var(--acid);
+      box-shadow:0 0 25px rgba(200,255,0,0.25), inset 0 0 15px rgba(200,255,0,0.05);
+      transform:scale(0.92);
+    }
+    .tooth[data-on="true"]::after {
+      top:55%; background:var(--acid);
+      box-shadow:0 0 10px rgba(200,255,0,0.8), 0 4px 20px rgba(200,255,0,0.4);
+      border-radius:2px;
+    }
+    .tooth[data-on="true"]:hover { transform:scale(1.05); border-color:var(--acid); }
+
+    .flip-row {
+      display:flex; align-items:center; justify-content:center; gap:1.5rem;
+      margin-top:1.5rem; font-family:'Space Mono',monospace;
+      font-size:0.7rem; letter-spacing:0.15em; text-transform:uppercase;
+    }
+    .flip-row span { color:var(--ash); }
+    .flip-row strong { color:var(--acid); font-weight:700; transition:transform 0.3s cubic-bezier(.16,1,.3,1), color 0.3s; display:inline-block; }
+
+    /* Combo float text */
+    .combo-pop {
+      position:fixed; pointer-events:none; z-index:10002;
+      font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem;
+      color:var(--blood); letter-spacing:-0.02em;
+      animation:comboFly 0.8s cubic-bezier(.16,1,.3,1) forwards;
+    }
+    @keyframes comboFly {
+      0%   { opacity:1; transform:translateY(0) scale(1); }
+      100% { opacity:0; transform:translateY(-60px) scale(1.5); }
+    }
+
+    /* Completion flash */
+    .flash-overlay {
+      position:fixed; inset:0; z-index:10003; pointer-events:none;
+      background:var(--acid); animation:flashBang 1s ease-out forwards;
+    }
+    @keyframes flashBang {
+      0%  { opacity:0.85; }
+      30% { opacity:0; }
+      50% { opacity:0.15; }
+      100%{ opacity:0; }
+    }
+
+    /* Intensity glow behind teeth grid */
+    .intensity-glow {
+      position:absolute; top:50%; left:50%; width:300px; height:300px;
+      border-radius:50%; transform:translate(-50%,-50%);
+      background:radial-gradient(circle, rgba(200,255,0,0.0) 0%, transparent 70%);
+      pointer-events:none; z-index:0;
+      transition:all 0.8s cubic-bezier(.16,1,.3,1);
+    }
+
+    /* ---- MIRRORS ---- */
+    .mirror-card {
+      position:relative; border-radius:16px; overflow:hidden;
+      aspect-ratio:3/4; background:#0a0a0a;
+      border:1px solid rgba(200,255,0,0.04); cursor:pointer;
+      transition:all 0.25s cubic-bezier(.16,1,.3,1);
+    }
+    .mirror-card:hover {
+      transform:scale(1.08); border-color:rgba(200,255,0,0.2);
+      box-shadow:0 0 60px rgba(200,255,0,0.08);
+    }
+    .mirror-card canvas { width:100%; height:100%; display:block; }
+    .mirror-lbl {
+      position:absolute; bottom:0.8rem; left:0.8rem;
+      font-family:'Space Mono',monospace; font-size:0.55rem;
+      letter-spacing:0.2em; text-transform:uppercase;
+      color:var(--ash); transition:color 0.2s; z-index:2;
+    }
+    .mirror-card:hover .mirror-lbl { color:var(--acid); }
+
+    /* ---- CLOSING ---- */
+    .closing-link {
+      display:inline-block; border:1px solid rgba(200,255,0,0.25);
+      color:var(--acid); padding:0.8rem 2rem; border-radius:100px;
+      font-family:'Space Mono',monospace; font-size:0.7rem;
+      letter-spacing:0.2em; text-transform:uppercase; text-decoration:none;
+      transition:all 0.2s cubic-bezier(.16,1,.3,1);
+    }
+    .closing-link:hover { background:rgba(200,255,0,0.08); box-shadow:0 0 40px rgba(200,255,0,0.15); transform:scale(1.05); }
+    .closing-link:active { transform:scale(0.95); }
+
+    /* ---- FOOTER ---- */
+    footer { padding:3rem 1.5rem 1.5rem; text-align:center; border-top:1px solid rgba(200,255,0,0.04); position:relative; z-index:3; }
+    footer p { font-family:'Space Mono',monospace; font-size:0.55rem; letter-spacing:0.2em; text-transform:uppercase; color:#333; }
+
+    /* ---- TOAST ---- */
+    .toast {
+      position:fixed; bottom:1.5rem; left:50%;
+      transform:translateX(-50%) translateY(20px);
+      background:rgba(0,0,0,0.95); border:1px solid rgba(200,255,0,0.12);
+      backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+      color:var(--ash); font-family:'Space Mono',monospace;
+      font-size:0.6rem; letter-spacing:0.1em; text-transform:uppercase;
+      padding:0.65rem 1.5rem; border-radius:100px; z-index:10001;
+      opacity:0; transition:opacity 0.4s, transform 0.4s;
+      pointer-events:none; white-space:nowrap;
+    }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* ---- STATIC CANVAS ---- */
+    #staticCanvas {
+      position:fixed; top:0; left:0; width:100%; height:100%;
+      pointer-events:none; z-index:2;
+      mix-blend-mode:screen;
+    }
+
+    /* ---- RESPONSIVE ---- */
+    @media(max-width:640px){
+      .play-btn { width:46px; height:46px; top:0.75rem; right:0.75rem; }
+      .sect { padding:3.5rem 1rem; }
+      .teeth-grid { gap:4px; }
+      .splash-card { padding:1.5rem 1.25rem; }
+    }
+
+    /* ---- REDUCED MOTION ---- */
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after {
+        animation-duration:0.01ms!important;
+        animation-iteration-count:1!important;
+        transition-duration:0.01ms!important;
+      }
+      #staticCanvas { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fixed static overlay canvas -->
+  <canvas id="staticCanvas" aria-hidden="true"></canvas>
+
+  <!-- Play button -->
+  <button class="play-btn" id="playBtn" aria-label="Play broadcast audio" title="Tune in">
+    <span class="play-icon"></span>
+  </button>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite">↑ Play — headphones on for the full signal</div>
+
+  <!-- ============================================================
+       HERO
+  ============================================================ -->
+  <header class="hero" id="hero">
+    <h1 class="hero-title" data-text="WEAR THE STATIC">WEAR THE<br>STATIC</h1>
+    <p class="hero-sub">A jacket made of radio frequency. You become the broadcast.</p>
+    <div class="hero-line"></div>
+  </header>
+
+  <!-- ============================================================
+       MARQUEE 1
+  ============================================================ -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-inner">
+      <span class="marquee-item">BROADCAST</span>
+      <span class="marquee-item">SIGNAL</span>
+      <span class="marquee-item">FREQUENCY</span>
+      <span class="marquee-item">TRANSMIT</span>
+      <span class="marquee-item">RECEIVE</span>
+      <span class="marquee-item">AMPLIFY</span>
+      <span class="marquee-item">BROADCAST</span>
+      <span class="marquee-item">SIGNAL</span>
+      <span class="marquee-item">FREQUENCY</span>
+      <span class="marquee-item">TRANSMIT</span>
+      <span class="marquee-item">RECEIVE</span>
+      <span class="marquee-item">AMPLIFY</span>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECTION: THE JACKET
+  ============================================================ -->
+  <section class="sect" id="jacket">
+    <div class="max-w-5xl mx-auto">
+      <div class="rv">
+        <span class="label">001 — The Jacket</span>
+        <h2 class="heading">Put it on.<br>You are the <span class="hl">signal</span>.</h2>
+        <p class="desc">
+          Woven from dead air and carrier waves. Every thread hums with a
+          frequency only you can feel. The room tunes in the moment you enter.
+          You are not wearing the broadcast — you are it.
+        </p>
+      </div>
+      <canvas id="freqCanvas" class="rv" width="800" height="200" aria-label="Live radio frequency visualization"></canvas>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10">
+        <div class="splash-card rv" data-delay="0">
+          <p class="card-num">01</p>
+          <h3 class="card-ttl">Carrier Wave</h3>
+          <p class="card-bdy">The hum beneath all sound. You hear it in your sternum before your ears catch up. It was always there.</p>
+        </div>
+        <div class="splash-card rv" data-delay="80">
+          <p class="card-num">02</p>
+          <h3 class="card-ttl">Dead Air</h3>
+          <p class="card-bdy">The space between stations. Where your thoughts become the program. Every silence is a frequency.</p>
+        </div>
+        <div class="splash-card rv" data-delay="160">
+          <p class="card-num">03</p>
+          <h3 class="card-ttl">Live Feed</h3>
+          <p class="card-bdy">Every movement is a transmission. Every gesture, a frequency shift someone else can feel in their teeth.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       BREAKER TEXT
+  ============================================================ -->
+  <div class="breaker rv" aria-hidden="true">
+    <span class="word">FLIP</span> <span class="word">THE</span> <span class="word">SWITCH</span>
+  </div>
+
+  <!-- ============================================================
+       SECTION: TEETH
+  ============================================================ -->
+  <section class="sect" id="teeth" style="position:relative;">
+    <div class="intensity-glow" id="intensityGlow"></div>
+    <div class="max-w-5xl mx-auto" style="position:relative;z-index:1;">
+      <div class="rv">
+        <span class="label">002 — The Switches</span>
+        <h2 class="heading">Your own teeth.<br>Each one a <span class="hl">light switch</span>.</h2>
+        <p class="desc">
+          Flip a tooth. A room appears — walls of reflections, each slightly different from the last.
+          Every switch is a new house of mirrors. Flip them all. Hear what happens.
+        </p>
+      </div>
+      <div class="teeth-grid rv" id="teethGrid" role="group" aria-label="Tooth switches — tap to flip"></div>
+      <div class="flip-row rv">
+        <span>Rooms: <strong id="flipCount">0</strong></span>
+        <span>Signal: <strong id="signalLvl">0%</strong></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION: MIRRORS
+  ============================================================ -->
+  <section class="sect" id="mirrors">
+    <div class="max-w-5xl mx-auto">
+      <div class="rv">
+        <span class="label">003 — The Mirrors</span>
+        <h2 class="heading">Every reflection<br>is a <span class="hl">different you</span>.</h2>
+        <p class="desc">
+          Each room bends light its own way. Your face fractures into versions you almost recognize.
+          Which one is real depends on which tooth you flipped last.
+        </p>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8" id="mirrorGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       MARQUEE 2
+  ============================================================ -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-inner" style="animation-direction:reverse;">
+      <span class="marquee-item">MIRROR</span>
+      <span class="marquee-item">REFLECT</span>
+      <span class="marquee-item">FRACTURE</span>
+      <span class="marquee-item">SPLIT</span>
+      <span class="marquee-item">BEND</span>
+      <span class="marquee-item">SHIFT</span>
+      <span class="marquee-item">MIRROR</span>
+      <span class="marquee-item">REFLECT</span>
+      <span class="marquee-item">FRACTURE</span>
+      <span class="marquee-item">SPLIT</span>
+      <span class="marquee-item">BEND</span>
+      <span class="marquee-item">SHIFT</span>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       CLOSING
+  ============================================================ -->
+  <section class="sect" style="min-height:60dvh; display:flex; align-items:center; justify-content:center; text-align:center;">
+    <div class="rv">
+      <span class="label">004 — End Transmission</span>
+      <h2 class="heading" style="font-size:clamp(1.8rem,5vw,3.5rem);">
+        You wore the static.<br>
+        You flipped the switches.<br>
+        Now every room is <span class="hl">yours</span>.
+      </h2>
+      <div class="mt-8">
+        <a href="#hero" class="closing-link">↾ Retune from the top</a>
+      </div>
+    </div>
+  </section>
+
+  <footer><p>Broadcast &middot; 2025</p></footer>
+
+  <!-- ============================================================
+       JAVASCRIPT — Production-hardened, visibility-aware, GC-safe
+  ============================================================ -->
+  <script>
+  (function() {
+    'use strict';
+
+    /* ==========================================================
+       CONFIGURATION — All tunable constants in one place
+    ========================================================== */
+    const CFG = {
+      TOOTH_COUNT: 28,
+      MIRROR_COUNT: 8,
+      FREQ_BARS: 64,
+      PARTICLE_POOL_SIZE: 40,
+      COMBO_TIMEOUT_MS: 1400,
+      /* Pentatonic scale across 2+ octaves — C major pentatonic */
+      NOTES: [
+        130.81,146.83,164.81,196.00,220.00,
+        261.63,293.66,329.63,392.00,440.00,
+        523.25,587.33,659.26,783.99,880.00
+      ],
+      STATIC_BASE_OPACITY: 0.055,
+      STATIC_MAX_OPACITY: 0.18,
+      CANVAS_SCALE: 6,       /* Static renders at 1/6 resolution */
+      FREQ_MIN_BAR_H: 3,
+    };
+
+    /* ==========================================================
+       STATE — Single source of truth, no className-based checks
+    ========================================================== */
+    const STATE = {
+      pageVisible: true,
+      audioPlaying: false,
+      mouseX: 0.5,
+      mouseY: 0.5,
+      teethOn: new Uint8Array(CFG.TOOTH_COUNT),  /* 0=off, 1=on */
+      totalOn: 0,
+      combo: 0,
+      lastFlipTime: 0,
+      frame: 0,
+      fps: 60,
+      lastFpsTime: performance.now(),
+      fpsFrames: 0,
+    };
+
+    /* ==========================================================
+       UTILITY — Shared helpers
+    ========================================================== */
+    function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function safeRemove(el) { if (el && el.parentNode) el.parentNode.removeChild(el); }
+
+    /** Try to vibrate (mobile haptic feedback) — fail silently */
+    function haptic(ms) {
+      try { navigator.vibrate && navigator.vibrate(ms); } catch(e) {}
+    }
+
+    /* ==========================================================
+       VISIBILITY — Pause all loops when tab is hidden
+    ========================================================== */
+    document.addEventListener('visibilitychange', function() {
+      STATE.pageVisible = !document.hidden;
+      if (STATE.pageVisible) {
+        /* Reset FPS tracker to avoid spike after resume */
+        STATE.lastFpsTime = performance.now();
+        STATE.fpsFrames = 0;
+      }
+    });
+
+    /* ==========================================================
+       PARTICLE POOL — Reusable DOM particles, zero GC pressure
+    ========================================================== */
+    const ParticlePool = {
+      pool: [],
+      active: [],
+
+      init: function() {
+        for (let i = 0; i < CFG.PARTICLE_POOL_SIZE; i++) {
+          const el = document.createElement('div');
+          el.style.cssText =
+            'position:fixed;border-radius:50%;pointer-events:none;z-index:9999;display:none;' +
+            'will-change:transform,opacity;';
+          document.body.appendChild(el);
+          this.pool.push({ el: el, active: false, timer: 0 });
+        }
+      },
+
+      /**
+       * Spawn a particle burst at (x, y)
+       * @param {number} x - clientX
+       * @param {number} y - clientY
+       * @param {number} count - particles to spawn (1-8)
+       * @param {string} color - CSS color string
+       */
+      burst: function(x, y, count, color) {
+        count = clamp(count, 1, 8);
+        for (let p = 0; p < count; p++) {
+          const obj = this.pool.find(function(o) { return !o.active; });
+          if (!obj) return;
+
+          const angle = (Math.PI * 2 / count) * p + Math.random() * 0.5;
+          const dist = 20 + Math.random() * 30;
+          const size = 3 + Math.random() * 5;
+
+          obj.active = true;
+          obj.timer = performance.now();
+          obj.el.style.display = 'block';
+          obj.el.style.width = size + 'px';
+          obj.el.style.height = size + 'px';
+          obj.el.style.background = color;
+          obj.el.style.boxShadow = '0 0 8px ' + color;
+          obj.el.style.left = x + 'px';
+          obj.el.style.top = y + 'px';
+          obj.el.style.transform = 'translate(-50%,-50%) scale(1)';
+          obj.el.style.opacity = '1';
+          obj.el.style.transition = 'none';
+
+          /* Force reflow, then animate out */
+          obj.el.offsetWidth; // eslint-disable-line no-unused-expressions
+          obj.el.style.transition = 'all 0.45s cubic-bezier(.16,1,.3,1)';
+          obj.el.style.transform =
+            'translate(calc(-50% + ' + (Math.cos(angle) * dist) + 'px), calc(-50% + ' + (Math.sin(angle) * dist) + 'px)) scale(0)';
+          obj.el.style.opacity = '0';
+        }
+      },
+
+      /** Return expired particles to pool */
+      tick: function(now) {
+        for (let i = this.pool.length - 1; i >= 0; i--) {
+          const obj = this.pool[i];
+          if (obj.active && now - obj.timer > 500) {
+            obj.active = false;
+            obj.el.style.display = 'none';
+          }
+        }
+      }
+    };
+
+    /* ==========================================================
+       AUDIO ENGINE — Full chain: noise→EQ→filter→comp→reverb→out
+    ========================================================== */
+    const Audio = {
+      ctx: null,
+      masterGain: null,
+      mixerGain: null,
+      thereminFilter: null,
+      compressor: null,
+      analyser: null,
+      convolver: null,
+      reverbGain: null,
+      sources: [],
+      /** Uint8Array for frequency data — reused every frame */
+      freqData: null,
+      /** Float32Array for time-domain data */
+      timeData: null,
+
+      /**
+       * Generate pink noise using Voss-McCartney algorithm
+       * Produces naturally balanced noise — warmer than white
+       */
+      generatePinkNoise: function(sampleRate, duration) {
+        var len = Math.floor(sampleRate * duration);
+        var buffer = new Float32Array(len);
+        var rows = new Float32Array(8);
+        var runningSum = 0;
+
+        for (var i = 0; i < len; i++) {
+          /* Bitwise trick: update row k when bit k of counter toggles to 1 */
+          var update = ~i | (i + 1);
+          for (var r = 0; r < 8; r++) {
+            if (update & (1 << r)) {
+              runningSum -= rows[r];
+              rows[r] = Math.random() * 2 - 1;
+              runningSum += rows[r];
+            }
+          }
+          buffer[i] = runningSum * 0.125;
+        }
+        return buffer;
+      },
+
+      /**
+       * Generate brown noise — deep, rumbling, oceanic
+       * Integrated white noise with leaky integrator
+       */
+      generateBrownNoise: function(sampleRate, duration) {
+        var len = Math.floor(sampleRate * duration);
+        var buffer = new Float32Array(len);
+        var last = 0;
+        for (var i = 0; i < len; i++) {
+          last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+          buffer[i] = last * 3.5;
+        }
+        return buffer;
+      },
+
+      /**
+       * Generate a reverb impulse response
+       * Exponential decay with stereo randomization
+       */
+      generateImpulse: function(sampleRate, duration, decay) {
+        var len = Math.floor(sampleRate * duration);
+        var impulse = this.ctx.createBuffer(2, len, sampleRate);
+        for (var ch = 0; ch < 2; ch++) {
+          var data = impulse.getChannelData(ch);
+          for (var i = 0; i < len; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+          }
+        }
+        return impulse;
+      },
+
+      /**
+       * Create a looping buffer source from a Float32Array
+       */
+      createLoopSource: function(bufferData) {
+        var buf = this.ctx.createBuffer(1, bufferData.length, this.ctx.sampleRate);
+        buf.getChannelData(0).set(bufferData);
+        var src = this.ctx.createBufferSource();
+        src.buffer = buf;
+        src.loop = true;
+        return src;
+      },
+
+      /**
+       * Initialize the full audio processing chain
+       */
+      init: function() {
+        if (this.ctx) return true;
+        try {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch(e) {
+          return false;
+        }
+
+        var sr = this.ctx.sampleRate;
+
+        /* ---- Master gain (final output level) ---- */
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.value = 0.7;
+
+        /* ---- Analyser for visualization (tapped off master) ---- */
+        this.analyser = this.ctx.createAnalyser();
+        this.analyser.fftSize = 256;
+        this.analyser.smoothingTimeConstant = 0.82;
+        this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
+        this.timeData = new Float32Array(this.analyser.fftSize);
+
+        /* ---- Dynamic compressor — glues the mix together ---- */
+        this.compressor = this.ctx.createDynamicsCompressor();
+        this.compressor.threshold.value = -20;
+        this.compressor.knee.value = 12;
+        this.compressor.ratio.value = 4;
+        this.compressor.attack.value = 0.008;
+        this.compressor.release.value = 0.25;
+
+        /* ---- Theremin filter — modulated by mouse position ---- */
+        this.thereminFilter = this.ctx.createBiquadFilter();
+        this.thereminFilter.type = 'lowpass';
+        this.thereminFilter.frequency.value = 4000;
+        this.thereminFilter.Q.value = 2;
+
+        /* ---- Mixer gain — all sources feed into this ---- */
+        this.mixerGain = this.ctx.createGain();
+        this.mixerGain.gain.value = 0.55;
+
+        /* ---- Convolution reverb ---- */
+        this.convolver = this.ctx.createConvolver();
+        this.convolver.buffer = this.generateImpulse(sr, 2.8, 2.5);
+        this.reverbGain = this.ctx.createGain();
+        this.reverbGain.gain.value = 0.35;  /* 35% wet */
+
+        /* ---- EQ: warmth boost + air shelf ---- */
+        var lowShelf = this.ctx.createBiquadFilter();
+        lowShelf.type = 'lowshelf';
+        lowShelf.frequency.value = 220;
+        lowShelf.gain.value = 3;  /* Warmth */
+
+        var highShelf = this.ctx.createBiquadFilter();
+        highShelf.type = 'highshelf';
+        highShelf.frequency.value = 7000;
+        highShelf.gain.value = 1.5; /* Air */
+
+        /* ---- Wire the chain ---- */
+        /* mixer → EQ → theremin filter → compressor → master */
+        this.mixerGain.connect(lowShelf);
+        lowShelf.connect(highShelf);
+        highShelf.connect(this.thereminFilter);
+        this.thereminFilter.connect(this.compressor);
+
+        /* Dry path: compressor → master */
+        this.compressor.connect(this.masterGain);
+
+        /* Wet path: compressor → convolver → reverbGain → master */
+        this.compressor.connect(this.convolver);
+        this.convolver.connect(this.reverbGain);
+        this.reverbGain.connect(this.masterGain);
+
+        /* Master → analyser → destination */
+        this.masterGain.connect(this.analyser);
+        this.masterGain.connect(this.ctx.destination);
+
+        return true;
+      },
+
+      /**
+       * Start the ambient soundscape
+       */
+      play: function() {
+        if (!this.init()) return;
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+        if (STATE.audioPlaying) return;
+        STATE.audioPlaying = true;
+
+        var sr = this.ctx.sampleRate;
+
+        /* ---- Layer 1: Pink noise (base texture) ---- */
+        var pinkSrc = this.createLoopSource(this.generatePinkNoise(sr, 6));
+        var pinkGain = this.ctx.createGain();
+        pinkGain.gain.value = 0;
+        pinkGain.gain.setTargetAtTime(0.06, this.ctx.currentTime, 0.8);
+
+        /* Bandpass to shape the pink noise into "radio hiss" */
+        var pinkBP = this.ctx.createBiquadFilter();
+        pinkBP.type = 'bandpass';
+        pinkBP.frequency.value = 2500;
+        pinkBP.Q.value = 0.6;
+
+        pinkSrc.connect(pinkBP).connect(pinkGain).connect(this.mixerGain);
+        pinkSrc.start();
+        this.sources.push({ src: pinkSrc, gain: pinkGain });
+
+        /* ---- Layer 2: Brown noise (sub rumble) ---- */
+        var brownSrc = this.createLoopSource(this.generateBrownNoise(sr, 6));
+        var brownGain = this.ctx.createGain();
+        brownGain.gain.value = 0;
+        brownGain.gain.setTargetAtTime(0.04, this.ctx.currentTime, 1);
+
+        var brownLP = this.ctx.createBiquadFilter();
+        brownLP.type = 'lowpass';
+        brownLP.frequency.value = 180;
+
+        brownSrc.connect(brownLP).connect(brownGain).connect(this.mixerGain);
+        brownSrc.start();
+        this.sources.push({ src: brownSrc, gain: brownGain });
+
+        /* ---- Layer 3: Sub-bass drone (55Hz triangle) ---- */
+        var drone1 = this.ctx.createOscillator();
+        drone1.type = 'triangle';
+        drone1.frequency.value = 55;
+        var droneG1 = this.ctx.createGain();
+        droneG1.gain.value = 0;
+        droneG1.gain.setTargetAtTime(0.025, this.ctx.currentTime, 1.2);
+
+        /* Slow LFO modulates drone pitch for movement */
+        var dLfo = this.ctx.createOscillator();
+        dLfo.type = 'sine';
+        dLfo.frequency.value = 0.15;
+        var dLfoG = this.ctx.createGain();
+        dLfoG.gain.value = 1.5;
+        dLfo.connect(dLfoG).connect(drone1.frequency);
+
+        drone1.connect(droneG1).connect(this.mixerGain);
+        drone1.start();
+        dLfo.start();
+        this.sources.push({ src: drone1, gain: droneG1, lfo: dLfo });
+
+        /* ---- Layer 4: Binaural pair (theta entrainment ~6Hz) ---- */
+        /* Left: 200Hz, Right: 206Hz — perceived 6Hz pulsation */
+        var merger = this.ctx.createChannelMerger(2);
+        var binL = this.ctx.createOscillator();
+        binL.type = 'sine';
+        binL.frequency.value = 200;
+        var binLG = this.ctx.createGain();
+        binLG.gain.value = 0;
+        binLG.gain.setTargetAtTime(0.012, this.ctx.currentTime, 1.5);
+        binL.connect(binLG).connect(merger, 0, 0);
+
+        var binR = this.ctx.createOscillator();
+        binR.type = 'sine';
+        binR.frequency.value = 206;
+        var binRG = this.ctx.createGain();
+        binRG.gain.value = 0;
+        binRG.gain.setTargetAtTime(0.012, this.ctx.currentTime, 1.5);
+        binR.connect(binRG).connect(merger, 0, 1);
+
+        merger.connect(this.mixerGain);
+        binL.start();
+        binR.start();
+        this.sources.push({ src: binL, gain: binLG }, { src: binR, gain: binRG });
+
+        /* ---- Layer 5: High shimmer (filtered triangle) ---- */
+        var shimOsc = this.ctx.createOscillator();
+        shimOsc.type = 'triangle';
+        shimOsc.frequency.value = 3200;
+        var shimGain = this.ctx.createGain();
+        shimGain.gain.value = 0;
+        shimGain.gain.setTargetAtTime(0.006, this.ctx.currentTime, 2);
+
+        /* LFO sweeps the shimmer frequency */
+        var shimLfo = this.ctx.createOscillator();
+        shimLfo.type = 'sine';
+        shimLfo.frequency.value = 0.08;
+        var shimLfoG = this.ctx.createGain();
+        shimLfoG.gain.value = 400;
+        shimLfo.connect(shimLfoG).connect(shimOsc.frequency);
+
+        var shimBP = this.ctx.createBiquadFilter();
+        shimBP.type = 'bandpass';
+        shimBP.frequency.value = 3200;
+        shimBP.Q.value = 2;
+
+        shimOsc.connect(shimBP).connect(shimGain).connect(this.mixerGain);
+        shimOsc.start();
+        shimLfo.start();
+        this.sources.push({ src: shimOsc, gain: shimGain, lfo: shimLfo });
+      },
+
+      /**
+       * Stop all audio with smooth fade
+       */
+      stop: function() {
+        if (!STATE.audioPlaying) return;
+        STATE.audioPlaying = false;
+
+        var now = this.ctx.currentTime;
+        var self = this;
+
+        /* Fade all source gains to zero */
+        this.sources.forEach(function(s) {
+          try {
+            s.gain.gain.setTargetAtTime(0, now, 0.4);
+          } catch(e) {}
+        });
+
+        /* After fade completes, stop and disconnect */
+        setTimeout(function() {
+          self.sources.forEach(function(s) {
+            try { s.src.stop(); } catch(e) {}
+            try { s.src.disconnect(); } catch(e) {}
+            try { s.gain.disconnect(); } catch(e) {}
+            if (s.lfo) { try { s.lfo.stop(); } catch(e) {} try { s.lfo.disconnect(); } catch(e) {} }
+          });
+          self.sources = [];
+        }, 1200);
+      },
+
+      /**
+       * Play a musical note when a tooth is flipped
+       * Uses triangle wave with ADSR envelope and stereo panning
+       */
+      playNote: function(toothIndex) {
+        if (!this.ctx) return;
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+
+        var freq = CFG.NOTES[toothIndex % CFG.NOTES.length];
+
+        /* Pitch up one octave for the second cycle of 15 */
+        if (toothIndex >= CFG.NOTES.length) {
+          freq *= 2;
+        }
+
+        var now = this.ctx.currentTime;
+
+        /* Oscillator with slight detune for warmth */
+        var osc = this.ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        osc.detune.value = (Math.random() - 0.5) * 8; /* ±4 cents */
+
+        /* Second oscillator detuned more for chorus effect */
+        var osc2 = this.ctx.createOscillator();
+        osc2.type = 'triangle';
+        osc2.frequency.value = freq;
+        osc2.detune.value = (Math.random() - 0.5) * 14; /* ±7 cents */
+
+        /* ADSR envelope */
+        var env = this.ctx.createGain();
+        env.gain.setValueAtTime(0, now);
+        env.gain.linearRampToValueAtTime(0.12, now + 0.015);   /* Attack: 15ms */
+        env.gain.linearRampToValueAtTime(0.06, now + 0.12);    /* Decay: 105ms */
+        env.gain.linearRampToValueAtTime(0.04, now + 0.5);     /* Sustain hold */
+        env.gain.linearRampToValueAtTime(0, now + 1.2);        /* Release: 700ms */
+
+        /* Stereo pan based on tooth position */
+        var panner = this.ctx.createStereoPanner();
+        panner.pan.value = (toothIndex / (CFG.TOOTH_COUNT - 1)) * 2 - 1; /* -1 to 1 */
+
+        osc.connect(env);
+        osc2.connect(env);
+        env.connect(panner);
+        panner.connect(this.mixerGain);
+
+        osc.start(now);
+        osc2.start(now);
+        osc.stop(now + 1.3);
+        osc2.stop(now + 1.3);
+
+        /* Auto-disconnect after note ends */
+        var self = this;
+        setTimeout(function() {
+          try { osc.disconnect(); osc2.disconnect(); env.disconnect(); panner.disconnect(); } catch(e) {}
+        }, 1400);
+      },
+
+      /**
+       * Play the full-broadcast chord (all 28 teeth on)
+       * Rich C-major spread across the whole range
+       */
+      playChord: function() {
+        if (!this.ctx) return;
+        var now = this.ctx.currentTime;
+
+        /* Play root, third, fifth across 3 octaves */
+        var chordFreqs = [130.81, 164.81, 196.00, 261.63, 329.63, 392.00, 523.25];
+
+        chordFreqs.forEach(function(f, i) {
+          var osc = Audio.ctx.createOscillator();
+          osc.type = 'triangle';
+          osc.frequency.value = f;
+
+          var env = Audio.ctx.createGain();
+          env.gain.setValueAtTime(0, now);
+          env.gain.linearRampToValueAtTime(0.07, now + 0.05);
+          env.gain.linearRampToValueAtTime(0.04, now + 0.8);
+          env.gain.linearRampToValueAtTime(0, now + 3.5);
+
+          osc.connect(env).connect(Audio.mixerGain);
+          osc.start(now);
+          osc.stop(now + 3.6);
+
+          setTimeout(function() {
+            try { osc.disconnect(); env.disconnect(); } catch(e) {}
+          }, 3700);
+        });
+      },
+
+      /**
+       * Update theremin filter based on mouse position
+       */
+      updateTheremin: function() {
+        if (!this.thereminFilter || !STATE.audioPlaying) return;
+        try {
+          /* Mouse X → cutoff (200–10000Hz) */
+          var cutoff = 200 + STATE.mouseX * 9800;
+          this.thereminFilter.frequency.setTargetAtTime(cutoff, this.ctx.currentTime, 0.05);
+          /* Mouse Y → resonance (0.5–14) */
+          var q = 0.5 + (1 - STATE.mouseY) * 13.5;
+          this.thereminFilter.Q.setTargetAtTime(q, this.ctx.currentTime, 0.05);
+        } catch(e) {}
+      },
+
+      /**
+       * Read frequency data for visualizer — reuses same buffer
+       */
+      getFrequencyData: function() {
+        if (!this.analyser) return null;
+        this.analyser.getByteFrequencyData(this.freqData);
+        return this.freqData;
+      }
+    };
+
+    /* ==========================================================
+       STATIC CANVAS — Low-res pixel noise, adaptive frame skip
+    ========================================================== */
+    const StaticRenderer = {
+      canvas: document.getElementById('staticCanvas'),
+      ctx: null,
+      w: 1,
+      h: 1,
+      imageData: null,
+      lastRender: 0,
+      /** Render every Nth frame — increases on low FPS */
+      skipRate: 1,
+      frameCounter: 0,
+
+      init: function() {
+        this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+        this.resize();
+        window.addEventListener('resize', this.resize.bind(this));
+      },
+
+      resize: function() {
+        this.w = Math.max(1, Math.floor(window.innerWidth / CFG.CANVAS_SCALE));
+        this.h = Math.max(1, Math.floor(window.innerHeight / CFG.CANVAS_SCALE));
+        this.canvas.width = this.w;
+        this.canvas.height = this.h;
+        this.imageData = this.ctx.createImageData(this.w, this.h);
+        /* Set alpha channel once — it never changes */
+        var d = this.imageData.data;
+        for (var i = 3; i < d.length; i += 4) {
+          d[i] = 255;
+        }
+      },
+
+      /** Render static noise into the pre-allocated ImageData */
+      render: function(now) {
+        /* Skip frames adaptively based on performance */
+        this.frameCounter++;
+        if (this.frameCounter % this.skipRate !== 0) return;
+
+        var w = this.w, h = this.h;
+        if (w < 1 || h < 1) return;
+
+        var d = this.imageData.data;
+        var len = d.length;
+
+        /* Fast path: only write R, G, B — alpha is pre-set */
+        for (var i = 0; i < len; i += 4) {
+          var v = (Math.random() * 256) | 0;  /* Bitwise OR for fast floor */
+          d[i] = v;
+          d[i + 1] = v;
+          d[i + 2] = v;
+        }
+
+        this.ctx.putImageData(this.imageData, 0, 0);
+
+        /* Adaptive opacity based on how many teeth are on */
+        var intensity = STATE.totalOn / CFG.TOOTH_COUNT;
+        var opacity = lerp(CFG.STATIC_BASE_OPACITY, CFG.STATIC_MAX_OPACITY, intensity);
+        this.canvas.style.opacity = opacity;
+      }
+    };
+
+    /* ==========================================================
+       FREQUENCY VISUALIZER — Driven by AnalyserNode data
+    ========================================================== */
+    const FreqViz = {
+      canvas: document.getElementById('freqCanvas'),
+      ctx: null,
+      w: 800,
+      h: 200,
+      barValues: new Float32Array(CFG.FREQ_BARS),
+      barTargets: new Float32Array(CFG.FREQ_BARS),
+      initialized: false,
+
+      init: function() {
+        var self = this;
+        var obs = new IntersectionObserver(function(entries) {
+          if (entries[0].isIntersecting) {
+            self.sizeCanvas();
+            obs.disconnect();
+            self.initialized = true;
+          }
+        }, { threshold: 0.1 });
+        obs.observe(this.canvas);
+      },
+
+      sizeCanvas: function() {
+        var rect = this.canvas.getBoundingClientRect();
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        this.w = Math.max(1, Math.floor(rect.width));
+        this.h = Math.max(1, Math.floor(rect.height));
+        this.canvas.width = Math.max(1, Math.floor(this.w * dpr));
+        this.canvas.height = Math.max(1, Math.floor(this.h * dpr));
+        this.ctx = this.canvas.getContext('2d');
+        this.ctx.scale(dpr, dpr);
+        this.canvas.style.width = this.w + 'px';
+        this.canvas.style.height = this.h + 'px';
+      },
+
+      render: function() {
+        if (!this.initialized || !this.ctx) return;
+
+        var w = this.w, h = this.h;
+        if (w < 1 || h < 1) return;
+
+        this.ctx.clearRect(0, 0, w, h);
+
+        var barW = w / CFG.FREQ_BARS;
+        var gap = 2;
+
+        /* If audio is playing, use real analyser data */
+        var freqData = Audio.getFrequencyData();
+        var binCount = freqData ? freqData.length : 0;
+
+        for (var i = 0; i < CFG.FREQ_BARS; i++) {
+          /* Map bar index to analyser bin */
+          if (freqData && binCount > 0) {
+            var binIdx = Math.floor(i * binCount / CFG.FREQ_BARS);
+            this.barTargets[i] = freqData[binIdx] / 255;
+          } else {
+            /* Idle animation when no audio */
+            if (Math.random() < 0.04) {
+              this.barTargets[i] = 0.05 + Math.random() * 0.25;
+            }
+          }
+
+          /* Smooth interpolation */
+          this.barValues[i] += (this.barTargets[i] - this.barValues[i]) * 0.14;
+
+          var barH = Math.max(CFG.FREQ_MIN_BAR_H, this.barValues[i] * h * 0.9);
+          var x = i * barW + gap / 2;
+          var bw = barW - gap;
+
+          /* Dynamic color based on height */
+          var hue = 63 + this.barValues[i] * 30;
+          var alpha = 0.35 + this.barValues[i] * 0.65;
+
+          this.ctx.fillStyle = 'hsla(' + hue + ',100%,50%,' + alpha + ')';
+          this.ctx.fillRect(x, h - barH, bw, barH);
+
+          /* Bright cap on top */
+          this.ctx.fillStyle = 'hsla(' + hue + ',100%,75%,' + (alpha * 0.6) + ')';
+          this.ctx.fillRect(x, h - barH, bw, Math.min(3, barH));
+        }
+      }
+    };
+
+    /* ==========================================================
+       MIRROR RENDERER — Generative patterns per mirror
+    ========================================================== */
+    const MirrorRenderer = {
+      canvases: [],
+      names: ['ROOM A','ROOM B','ROOM C','ROOM D','ROOM E','ROOM F','ROOM G','ROOM H'],
+
+      init: function() {
+        var grid = document.getElementById('mirrorGrid');
+
+        for (var m = 0; m < CFG.MIRROR_COUNT; m++) {
+          var card = document.createElement('div');
+          card.className = 'mirror-card rv';
+          card.setAttribute('tabindex', '0');
+          card.setAttribute('aria-label', this.names[m]);
+
+          var cvs = document.createElement('canvas');
+          cvs.width = 120;
+          cvs.height = 160;
+          card.appendChild(cvs);
+
+          var lbl = document.createElement('span');
+          lbl.className = 'mirror-lbl';
+          lbl.textContent = this.names[m];
+          card.appendChild(lbl);
+
+          /* 3D tilt on hover — desktop only */
+          if (!('ontouchstart' in window)) {
+            (function(c) {
+              c.addEventListener('mousemove', function(e) {
+                var r = c.getBoundingClientRect();
+                var x = (e.clientX - r.left) / r.width - 0.5;
+                var y = (e.clientY - r.top) / r.height - 0.5;
+                c.style.transform = 'scale(1.08) perspective(500px) rotateY(' + (x * 15) + 'deg) rotateX(' + (-y * 15) + 'deg)';
+              });
+              c.addEventListener('mouseleave', function() { c.style.transform = ''; });
+            })(card);
+          }
+
+          grid.appendChild(card);
+          this.canvases.push({ cvs: cvs, seed: m * 137.5 });
+        }
+      },
+
+      render: function(t) {
+        for (var m = 0; m < this.canvases.length; m++) {
+          var obj = this.canvases[m];
+          var c = obj.cvs.getContext('2d');
+          var w = obj.cvs.width;
+          var h = obj.cvs.height;
+          var seed = obj.seed;
+
+          c.fillStyle = '#080808';
+          c.fillRect(0, 0, w, h);
+
+          /* Rotating shard lines */
+          c.save();
+          c.translate(w / 2, h / 2);
+
+          var shards = 8;
+          /* Speed increases with more teeth on */
+          var speed = 0.3 + (STATE.totalOn / CFG.TOOTH_COUNT) * 0.6;
+
+          for (var i = 0; i < shards; i++) {
+            var angle = (Math.PI * 2 / shards) * i + t * speed + seed;
+            var len = 40 + Math.sin(t * 0.8 + seed + i) * 20;
+
+            c.save();
+            c.rotate(angle);
+
+            c.beginPath();
+            c.moveTo(0, 0);
+            c.lineTo(len, 0);
+            c.strokeStyle = 'rgba(200,255,0,' + (0.07 + Math.sin(t + i) * 0.04) + ')';
+            c.lineWidth = 1;
+            c.stroke();
+
+            /* Triangle facet */
+            c.beginPath();
+            c.moveTo(len * 0.3, -6);
+            c.lineTo(len, 0);
+            c.lineTo(len * 0.3, 6);
+            c.closePath();
+            c.fillStyle = 'rgba(0,229,255,' + (0.03 + Math.sin(t * 1.3 + i + seed) * 0.02) + ')';
+            c.fill();
+
+            c.restore();
+          }
+
+          c.restore();
+
+          /* Central glow */
+          var grd = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, 50);
+          grd.addColorStop(0, 'rgba(200,255,0,' + (0.05 + Math.sin(t + seed) * 0.03) + ')');
+          grd.addColorStop(1, 'transparent');
+          c.fillStyle = grd;
+          c.fillRect(0, 0, w, h);
+        }
+      }
+    };
+
+    /* ==========================================================
+       TEETH MANAGER — Robust state via data attributes
+    ========================================================== */
+    const Teeth = {
+      grid: document.getElementById('teethGrid'),
+      countEl: document.getElementById('flipCount'),
+      signalEl: document.getElementById('signalLvl'),
+      intensityGlow: document.getElementById('intensityGlow'),
+      allOnTriggered: false,
+
+      init: function() {
+        for (var i = 0; i < CFG.TOOTH_COUNT; i++) {
+          var t = document.createElement('div');
+          t.classList.add('tooth');
+          t.setAttribute('data-on', 'false');
+          t.setAttribute('data-index', String(i));
+          t.setAttribute('role', 'switch');
+          t.setAttribute('aria-checked', 'false');
+          t.setAttribute('tabindex', '0');
+          t.setAttribute('aria-label', 'Tooth ' + (i + 1));
+
+          /* Use closure to capture index */
+          (function(idx, el) {
+            var handler = function(e) {
+              if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+              if (e.type === 'keydown') e.preventDefault();
+              Teeth.flip(idx, el);
+            };
+            el.addEventListener('click', handler);
+            el.addEventListener('keydown', handler);
+          })(i, t);
+
+          this.grid.appendChild(t);
+        }
+      },
+
+      /**
+       * Flip a tooth — all state changes go through here
+       */
+      flip: function(idx, el) {
+        var isOn = el.getAttribute('data-on') === 'true';
+        var newState = !isOn;
+
+        /* Update DOM state */
+        el.setAttribute('data-on', String(newState));
+        el.setAttribute('aria-checked', String(newState));
+
+        /* Update tracking state */
+        STATE.teethOn[idx] = newState ? 1 : 0;
+        STATE.totalOn += newState ? 1 : -1;
+        STATE.totalOn = Math.max(0, STATE.totalOn);
+
+        /* Update counters */
+        this.countEl.textContent = STATE.totalOn;
+        var pct = Math.round((STATE.totalOn / CFG.TOOTH_COUNT) * 100);
+        this.signalEl.textContent = pct + '%';
+
+        /* Punch effect on counter */
+        this.countEl.style.transition = 'none';
+        this.countEl.style.transform = 'scale(1.6)';
+        this.countEl.style.color = 'var(--blood)';
+        var ce = this.countEl;
+        requestAnimationFrame(function() {
+          ce.style.transition = 'all 0.4s cubic-bezier(.16,1,.3,1)';
+          ce.style.transform = 'scale(1)';
+          ce.style.color = 'var(--acid)';
+        });
+
+        /* Intensity glow */
+        var glowIntensity = STATE.totalOn / CFG.TOOTH_COUNT;
+        this.intensityGlow.style.background =
+          'radial-gradient(circle, rgba(200,255,0,' + (glowIntensity * 0.2) + ') 0%, transparent 70%)';
+        this.intensityGlow.style.width = (200 + glowIntensity * 200) + 'px';
+        this.intensityGlow.style.height = (200 + glowIntensity * 200) + 'px';
+
+        /* Audio: play note on flip ON */
+        if (newState) {
+          Audio.playNote(idx);
+          haptic(15);
+
+          /* Particle burst */
+          var rect = el.getBoundingClientRect();
+          ParticlePool.burst(
+            rect.left + rect.width / 2,
+            rect.top + rect.height / 2,
+            6,
+            'rgba(200,255,0,0.9)'
+          );
+
+          /* Combo system */
+          var now = performance.now();
+          if (now - STATE.lastFlipTime < CFG.COMBO_TIMEOUT_MS) {
+            STATE.combo++;
+            this.showCombo(STATE.combo, rect);
+          } else {
+            STATE.combo = 1;
+          }
+          STATE.lastFlipTime = now;
+
+          /* Check for all-on completion */
+          if (STATE.totalOn === CFG.TOOTH_COUNT && !this.allOnTriggered) {
+            this.allOnTriggered = true;
+            this.triggerFullBroadcast();
+          }
+        } else {
+          haptic(8);
+
+          /* If we un-flip, reset the all-on trigger */
+          if (this.allOnTriggered && STATE.totalOn < CFG.TOOTH_COUNT) {
+            this.allOnTriggered = false;
+          }
+        }
+      },
+
+      /**
+       * Show floating combo text
+       */
+      showCombo: function(count, rect) {
+        if (count < 2) return;
+
+        var pop = document.createElement('div');
+        pop.className = 'combo-pop';
+        pop.textContent = 'x' + count;
+        pop.style.left = (rect.left + rect.width / 2) + 'px';
+        pop.style.top = (rect.top - 10) + 'px';
+
+        document.body.appendChild(pop);
+        setTimeout(function() { safeRemove(pop); }, 900);
+
+        /* Extra particles on high combos */
+        if (count >= 5) {
+          ParticlePool.burst(
+            rect.left + rect.width / 2,
+            rect.top + rect.height / 2,
+            8,
+            'rgba(255,34,0,0.9)'
+          );
+          haptic(30);
+        }
+      },
+
+      /**
+       * All 28 teeth on — full broadcast moment
+       */
+      triggerFullBroadcast: function() {
+        /* Visual flash */
+        var flash = document.createElement('div');
+        flash.className = 'flash-overlay';
+        document.body.appendChild(flash);
+        setTimeout(function() { safeRemove(flash); }, 1100);
+
+        /* Play the chord */
+        Audio.playChord();
+        haptic(50);
+
+        /* Burst particles from center of grid */
+        var gridRect = this.grid.getBoundingClientRect();
+        ParticlePool.burst(
+          gridRect.left + gridRect.width / 2,
+          gridRect.top + gridRect.height / 2,
+          8,
+          'rgba(200,255,0,1)'
+        );
+      }
+    };
+
+    /* ==========================================================
+       SPLASH CARDS — Mouse-aware radial + click ripple
+    ========================================================== */
+    function initSplashCards() {
+      document.querySelectorAll('.splash-card').forEach(function(card) {
+        card.addEventListener('mousemove', function(e) {
+          var r = card.getBoundingClientRect();
+          card.style.setProperty('--sx', (e.clientX - r.left) + 'px');
+          card.style.setProperty('--sy', (e.clientY - r.top) + 'px');
+        });
+
+        card.addEventListener('click', function(e) {
+          var r = card.getBoundingClientRect();
+          var rip = document.createElement('div');
+          rip.style.cssText =
+            'position:absolute;left:' + (e.clientX - r.left) + 'px;' +
+            'top:' + (e.clientY - r.top) + 'px;' +
+            'width:120px;height:120px;margin:-60px 0 0 -60px;' +
+            'border-radius:50%;background:rgba(200,255,0,0.2);' +
+            'transform:scale(0);animation:ripOut 0.6s ease-out forwards;' +
+            'pointer-events:none;z-index:0;';
+          card.appendChild(rip);
+          setTimeout(function() { safeRemove(rip); }, 700);
+        });
+      });
+    }
+
+    /* ==========================================================
+       SCROLL REVEAL — IntersectionObserver with stagger
+    ========================================================== */
+    function initReveal() {
+      var obs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var d = parseInt(entry.target.dataset.delay || '0', 10);
+            setTimeout(function() { entry.target.classList.add('vis'); }, d);
+            obs.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+
+      document.querySelectorAll('.rv').forEach(function(el) { obs.observe(el); });
+    }
+
+    /* ==========================================================
+       PLAY BUTTON WIRING
+    ========================================================== */
+    function initPlayButton() {
+      var btn = document.getElementById('playBtn');
+      btn.addEventListener('click', function() {
+        if (STATE.audioPlaying) {
+          Audio.stop();
+        } else {
+          Audio.play();
+        }
+        btn.classList.toggle('on', STATE.audioPlaying);
+        btn.setAttribute('aria-label', STATE.audioPlaying ? 'Stop broadcast' : 'Play broadcast audio');
+      });
+    }
+
+    /* ==========================================================
+       TOAST
+    ========================================================== */
+    function initToast() {
+      var toast = document.getElementById('toast');
+      setTimeout(function() { toast.classList.add('show'); }, 2200);
+
+      function kill() {
+        toast.classList.remove('show');
+        setTimeout(function() { safeRemove(toast); }, 500);
+      }
+      setTimeout(kill, 7000);
+      document.getElementById('playBtn').addEventListener('click', kill, { once: true });
+    }
+
+    /* ==========================================================
+       INPUT TRACKING — Mouse and touch position, normalized 0-1
+    ========================================================== */
+    function initInputTracking() {
+      /* Mouse */
+      document.addEventListener('mousemove', function(e) {
+        STATE.mouseX = e.clientX / window.innerWidth;
+        STATE.mouseY = e.clientY / window.innerHeight;
+      });
+
+      /* Touch */
+      document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 0) {
+          STATE.mouseX = e.touches[0].clientX / window.innerWidth;
+          STATE.mouseY = e.touches[0].clientY / window.innerHeight;
+        }
+      }, { passive: true });
+
+      /* Cursor glow — desktop only */
+      if (!('ontouchstart' in window)) {
+        var trail = document.createElement('div');
+        trail.setAttribute('aria-hidden', 'true');
+        trail.style.cssText =
+          'position:fixed;width:220px;height:220px;border-radius:50%;' +
+          'background:radial-gradient(circle,rgba(200,255,0,0.05) 0%,transparent 70%);' +
+          'pointer-events:none;z-index:1;transform:translate(-50%,-50%);' +
+          'will-change:left,top;mix-blend-mode:screen;';
+        document.body.appendChild(trail);
+
+        document.addEventListener('mousemove', function(e) {
+          trail.style.left = e.clientX + 'px';
+          trail.style.top = e.clientY + 'px';
+        });
+
+        /* Hero parallax */
+        var heroT = document.querySelector('.hero-title');
+        document.addEventListener('mousemove', function(e) {
+          var x = (e.clientX / window.innerWidth - 0.5) * 2;
+          var y = (e.clientY / window.innerHeight - 0.5) * 2;
+          if (heroT) heroT.style.transform = 'translate(' + (x * 6) + 'px,' + (y * 4) + 'px)';
+        });
+      }
+    }
+
+    /* ==========================================================
+       FPS TRACKER — Adaptive quality
+    ========================================================== */
+    function updateFps(now) {
+      STATE.fpsFrames++;
+      if (now - STATE.lastFpsTime >= 1000) {
+        STATE.fps = STATE.fpsFrames;
+        STATE.fpsFrames = 0;
+        STATE.lastFpsTime = now;
+
+        /* Adaptive: if FPS drops below 45, increase static skip rate */
+        if (STATE.fps < 45) {
+          StaticRenderer.skipRate = Math.min(StaticRenderer.skipRate + 1, 4);
+        } else if (STATE.fps > 55 && StaticRenderer.skipRate > 1) {
+          StaticRenderer.skipRate = Math.max(1, StaticRenderer.skipRate - 1);
+        }
+      }
+    }
+
+    /* ==========================================================
+       MAIN LOOP — Single rAF driving all subsystems
+    ========================================================== */
+    function mainLoop(timestamp) {
+      requestAnimationFrame(mainLoop);
+
+      /* Pause everything when page is hidden */
+      if (!STATE.pageVisible) return;
+
+      var now = timestamp || performance.now();
+      var t = now * 0.001;
+
+      STATE.frame++;
+
+      /* FPS tracking */
+      updateFps(now);
+
+      /* Audio: update theremin filter */
+      Audio.updateTheremin();
+
+      /* Render: static canvas */
+      StaticRenderer.render(now);
+
+      /* Render: frequency visualizer */
+      FreqViz.render();
+
+      /* Render: mirrors */
+      MirrorRenderer.render(t);
+
+      /* Particle pool cleanup */
+      ParticlePool.tick(now);
+    }
+
+    /* ==========================================================
+       RIPPLE ANIMATION KEYFRAMES — Injected once
+    ========================================================== */
+    (function() {
+      var s = document.createElement('style');
+      s.textContent = '@keyframes ripOut { to { transform:scale(5); opacity:0; } }';
+      document.head.appendChild(s);
+    })();
+
+    /* ==========================================================
+       INIT — Bootstrap everything in order
+    ========================================================== */
+    function init() {
+      StaticRenderer.init();
+      ParticlePool.init();
+      FreqViz.init();
+      MirrorRenderer.init();
+      Teeth.init();
+      initSplashCards();
+      initReveal();
+      initPlayButton();
+      initToast();
+      initInputTracking();
+
+      /* Start the main loop */
+      requestAnimationFrame(mainLoop);
+    }
+
+    /* Fire on DOM ready */
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+  })();
+  </script>
+</body>
+</html>
